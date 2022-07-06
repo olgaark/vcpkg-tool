@@ -1,0 +1,15 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\ce",
+    "\\ce\\cli",
+    "\\ce\\cli\\commands",
+    "\\ce\\cli\\switches",
+    "\\ce\\dist",
+    "\\ce\\dist\\artifacts",
+    "\\ce\\dist\\cli",
+    "\\ce\\dist\\cli\\commands",
+    "\\ce\\dist\\cli\\switches"
+  ],
+  "PreviewInSolutionExplorer": false
+}

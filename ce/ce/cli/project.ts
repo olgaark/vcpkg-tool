@@ -16,6 +16,7 @@ class ActivationOptions {
   allLanguages?: boolean;
   language?: string;
   msbuildProps?: Uri;
+  artifactTag?: string;
 }
 
 export async function openProject(location: Uri): Promise<ProjectManifest> {
@@ -24,12 +25,19 @@ export async function openProject(location: Uri): Promise<ProjectManifest> {
 }
 
 export async function activate(artifacts: ArtifactMap, createUndoFile: boolean, options?: ActivationOptions) {
+
   // install the items in the project
   const [success, artifactStatus] = await installArtifacts(session, artifacts.artifacts, options);
 
-  if (success) {
+  // generate msbuild props for all selected artifacts
+  if (options?.msbuildProps) {
+    await session.activation.generateMSBuildProps(artifacts.artifacts, options?.msbuildProps);
+    return true;
+  }
+  else if (success) {
+
     const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
-    await session.activation.activate(artifacts.artifacts, session.environment, session.postscriptFile, backupFile, options?.msbuildProps);
+    await session.activation.activate(artifacts.artifacts, session.environment, session.postscriptFile, backupFile);
   }
 
   return success;

@@ -9,6 +9,8 @@
       "request": "launch",
       "type": "node",
       "program": "${workspaceRoot}/ce/ce/dist/main.js",
+      "args": ["activate", "--debug", "--msbuild-props:\"SDK.props\"", "--artifact-tag:msbuild", "--target:x64", "--windows" ],
+      "cwd": "D:\\VcpkgIntegration\\MySolution",
       "console": "integratedTerminal",
       "skipFiles": [
         "<node_internals>/**"

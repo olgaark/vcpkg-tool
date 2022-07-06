@@ -30,4 +30,7 @@ export interface Info extends Validation {
 
   /** higher priority artifacts should install earlier */
   priority?: number;
+
+  /** when --tag:tag_value option is specified on command line, only artifacts that has the matching tag value will be installed */
+  tag?: string;
 }

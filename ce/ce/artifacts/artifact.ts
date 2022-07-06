@@ -116,7 +116,7 @@ export class Artifact extends ArtifactBase {
     return `${this.registryUri.toString()}::${this.id}::${this.version}`;
   }
 
-  async install(events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<boolean> {
+  async install(events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string, artifactTag?: string }): Promise<boolean> {
     let installing = false;
     try {
       // is it installed?
@@ -150,6 +150,12 @@ export class Artifact extends ArtifactBase {
       // ok, let's install this.
       for (const installInfo of applicableDemands.installer) {
         if (installInfo.lang && !options.allLanguages && options.language && options.language.toLowerCase() !== installInfo.lang.toLowerCase()) {
+          continue;
+        }
+
+        // if tag is requested, but does not match the artifact tag, skip its install
+        if (options.artifactTag && (!installInfo.tag || installInfo.tag != options.artifactTag))
+        {
           continue;
         }
 

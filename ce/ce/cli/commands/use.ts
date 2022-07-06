@@ -10,6 +10,7 @@ import { cmdSwitch } from '../format';
 import { activate } from '../project';
 import { error, log, warning } from '../styling';
 import { MSBuildProps } from '../switches/msbuild-props';
+import { ArtifactTag } from '../switches/artifact-tag';
 import { Project } from '../switches/project';
 import { Registry } from '../switches/registry';
 import { Version } from '../switches/version';
@@ -25,6 +26,7 @@ export class UseCommand extends Command {
   registrySwitch = new Registry(this);
   project = new Project(this);
   msbuildProps = new MSBuildProps(this);
+  artifactTag = new ArtifactTag(this);
 
   get summary() {
     return i`Instantly activates an artifact outside of the project`;

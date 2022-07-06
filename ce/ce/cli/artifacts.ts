@@ -59,7 +59,7 @@ export async function selectArtifacts(selections: Selections, registries: Regist
   return artifacts;
 }
 
-export async function installArtifacts(session: Session, artifacts: Iterable<Artifact>, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
+export async function installArtifacts(session: Session, artifacts: Iterable<Artifact>, options?: { force?: boolean, allLanguages?: boolean, language?: string, artifactTag?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
   // resolve the full set of artifacts to install.
   const installed = new Map<Artifact, boolean>();
 

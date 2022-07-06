@@ -30,6 +30,9 @@ export class Info extends Entity implements IInfo {
   get dependencyOnly(): boolean { return this.flags.has('dependencyOnly'); }
   set dependencyOnly(value: boolean) { this.flags.set('dependencyOnly', value); }
 
+  get tag(): string | undefined { return this.asString(this.getMember('tag')); }
+  set tag(value: string | undefined) { this.setMember('tag', value); }
+
   /** @internal */
   override *validate(): Iterable<ValidationError> {
     yield* super.validate();
