@@ -7,7 +7,7 @@ import { MetadataFile } from './amf/metadata-file';
 import { Activation, deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
 import { Registry } from './artifacts/registry';
-import { defaultConfig, globalConfigurationFile, postscriptVarible, profileNames, registryIndexFile, undo, vcpkgDownloadFolder } from './constants';
+import { defaultConfig, globalConfigurationFile, postscriptVariable, profileNames, registryIndexFile, undo, vcpkgDownloadFolder } from './constants';
 import { FileSystem, FileType } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
@@ -71,6 +71,7 @@ export class Session {
   readonly tmpFolder: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
+  readonly vcpkgCommand?: string;
   readonly activation: Activation = new Activation(this);
 
   readonly globalConfig: Uri;
@@ -105,6 +106,8 @@ export class Session {
     this.homeFolder = this.fileSystem.file(settings['homeFolder']!);
     this.cache = this.environment[vcpkgDownloadFolder] ? this.parseUri(this.environment[vcpkgDownloadFolder]!) : this.homeFolder.join('downloads');
     this.globalConfig = this.homeFolder.join(globalConfigurationFile);
+
+    this.vcpkgCommand = settings['vcpkgCommand'];
 
     this.tmpFolder = this.homeFolder.join('tmp');
     this.installFolder = this.homeFolder.join('artifacts');
@@ -149,35 +152,39 @@ export class Session {
   }
 
 
-  loadRegistry(registryLocation: Uri | string | undefined, registryKind = 'artifact'): Registry | undefined {
-    if (registryLocation) {
-      const r = this.registries.getRegistry(registryLocation.toString());
+  async loadRegistry(registryLocation: Uri | string | undefined, registryKind = 'artifact'): Promise<Registry | undefined> {
+    // normalize the location first. 
 
-      if (r) {
-        return r;
-      }
+    registryLocation = typeof registryLocation === 'string' ? await this.parseLocation(registryLocation) || this.parseUri(registryLocation) : registryLocation;
 
-      // not already loaded
-      registryLocation = this.parseUri(registryLocation);
-
-      switch (registryKind) {
-
-        case 'artifact':
-          switch (registryLocation.scheme) {
-            case 'https':
-              return this.registries.add(new RemoteRegistry(this, registryLocation));
-
-            case 'file':
-              return this.registries.add(new LocalRegistry(this, registryLocation));
-
-            default:
-              throw new Error(i`Unsupported registry scheme '${registryLocation.scheme}'`);
-          }
-      }
-      throw new Error(i`Unsupported registry kind '${registryKind}'`);
+    if (!registryLocation) {
+      return undefined;
     }
 
-    return undefined;
+    // if the registry from that location is already loaded, return it.
+    const r = this.registries.getRegistry(registryLocation.toString());
+    if (r) {
+      return r;
+    }
+
+    // not already loaded
+    registryLocation = this.parseUri(registryLocation);
+
+    switch (registryKind) {
+
+      case 'artifact':
+        switch (registryLocation.scheme) {
+          case 'https':
+            return this.registries.add(new RemoteRegistry(this, registryLocation));
+
+          case 'file':
+            return this.registries.add(new LocalRegistry(this, registryLocation));
+
+          default:
+            throw new Error(i`Unsupported registry scheme '${registryLocation.scheme}'`);
+        }
+    }
+    throw new Error(i`Unsupported registry kind '${registryKind}'`);
   }
 
   async isLocalRegistry(location: Uri | string): Promise<boolean> {
@@ -250,7 +257,7 @@ export class Session {
 
   #postscriptFile?: Uri;
   get postscriptFile() {
-    return this.#postscriptFile || (this.#postscriptFile = this.environment[postscriptVarible] ? this.fileSystem.file(this.environment[postscriptVarible]!) : undefined);
+    return this.#postscriptFile || (this.#postscriptFile = this.environment[postscriptVariable] ? this.fileSystem.file(this.environment[postscriptVariable]!) : undefined);
   }
 
   async init() {
@@ -286,7 +293,7 @@ export class Session {
       const loc = regDef.location.get(0);
       if (loc) {
         const uri = this.parseUri(loc);
-        const reg = this.loadRegistry(uri, regDef.registryKind);
+        const reg = await this.loadRegistry(uri, regDef.registryKind);
         if (reg) {
           this.channels.debug(`Loaded global manifest ${name} => ${uri.formatted}`);
           this.defaultRegistry.add(reg, name);

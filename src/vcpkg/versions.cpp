@@ -254,7 +254,7 @@ namespace vcpkg
 
     ExpectedL<DotVersion> DotVersion::try_parse_relaxed(StringView str)
     {
-        return try_parse_dot_version(str).replace_error([&] {
+        return try_parse_dot_version(str).map_error([&](LocalizedString&&) {
             return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidRelaxed, msg::version = str));
         });
     }
@@ -357,7 +357,11 @@ namespace vcpkg
 
     void to_string(std::string& out, VersionScheme scheme)
     {
-        if (scheme == VersionScheme::String)
+        if (scheme == VersionScheme::Missing)
+        {
+            out.append("missing");
+        }
+        else if (scheme == VersionScheme::String)
         {
             out.append("string");
         }

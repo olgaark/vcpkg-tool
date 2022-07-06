@@ -80,16 +80,16 @@ namespace
                     }
                     else
                     {
-                        msg::print_error(msg::format(msgFuzzInvalidKind, msg::value = value)
-                                             .append_raw('\n')
-                                             .append_indent()
-                                             .append(msgFuzzExpectedOneOf));
+                        msg::println_error(msg::format(msgFuzzInvalidKind, msg::value = value)
+                                               .append_raw('\n')
+                                               .append_indent()
+                                               .append(msgFuzzExpectedOneOf));
                         print_help_and_exit(true);
                     }
                 }
                 else
                 {
-                    msg::print_error(msgFuzzUnknownOption, msg::option = key);
+                    msg::println_error(msgFuzzUnknownOption, msg::option = key);
                     print_help_and_exit(true);
                 }
             }
@@ -147,7 +147,7 @@ namespace
             }
         }
 
-        FuzzKind kind;
+        FuzzKind kind = FuzzKind::None;
     };
 
     std::string read_all_of_stdin()
@@ -162,7 +162,7 @@ namespace
         auto res = Json::parse(text);
         if (!res)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, res.error()->format());
+            Checks::exit_with_message(VCPKG_LINE_INFO, res.error()->to_string());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

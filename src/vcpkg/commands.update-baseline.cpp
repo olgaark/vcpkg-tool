@@ -78,7 +78,7 @@ namespace vcpkg::Commands
         }
 
         // this isn't an error, since we want to continue attempting to update baselines
-        msg::print_warning(
+        msg::println_warning(
             msg::format(msgUpdateBaselineNoUpdate, msg::url = url, msg::value = reg.baseline.value_or(""))
                 .append_raw('\n')
                 .append(new_baseline_res.error()));
@@ -97,7 +97,7 @@ namespace vcpkg::Commands
 
         if (configuration.source == ConfigurationSource::None && !has_manifest)
         {
-            msg::print_warning(msgUpdateBaselineNoConfiguration);
+            msg::println_warning(msgUpdateBaselineNoConfiguration);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -110,7 +110,7 @@ namespace vcpkg::Commands
         }
         if (!has_builtin_baseline && !add_builtin_baseline && configuration.source == ConfigurationSource::None)
         {
-            msg::print_warning(msgUpdateBaselineNoExistingBuiltinBaseline, msg::option = OPTION_ADD_INITIAL_BASELINE);
+            msg::println_warning(msgUpdateBaselineNoExistingBuiltinBaseline, msg::option = OPTION_ADD_INITIAL_BASELINE);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -123,7 +123,7 @@ namespace vcpkg::Commands
             synthesized_registry.kind = "builtin";
             if (auto p = manifest.manifest.get("builtin-baseline"))
             {
-                synthesized_registry.baseline = p->string().to_string();
+                synthesized_registry.baseline = p->string(VCPKG_LINE_INFO).to_string();
             }
 
             update_baseline_in_config(paths, synthesized_registry);
