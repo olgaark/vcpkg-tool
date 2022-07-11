@@ -16,6 +16,7 @@ class ActivationOptions {
   allLanguages?: boolean;
   language?: string;
   msbuildProps?: Uri;
+  json?: Uri;
   artifactTag?: string;
 }
 
@@ -37,7 +38,7 @@ export async function activate(artifacts: ArtifactMap, createUndoFile: boolean, 
   else if (success) {
 
     const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
-    await session.activation.activate(artifacts.artifacts, session.environment, session.postscriptFile, backupFile);
+    await session.activation.activate(artifacts.artifacts, session.environment, session.postscriptFile, backupFile, options?.json);
   }
 
   return success;

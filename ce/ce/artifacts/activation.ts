@@ -627,7 +627,7 @@ export class Activation {
       await msbuildFile.writeUTF8(await this.generateMSBuild(artifacts));
   }
 
-  async activate(artifacts: Iterable<Artifact>, currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined) {
+  async activate(artifacts: Iterable<Artifact>, currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, json: Uri | undefined) {
     let undoDeactivation = '';
     const scriptKind = extname(shellScriptFile?.fsPath || '');
 
@@ -645,7 +645,20 @@ export class Activation {
 
     const [variables, undo] = await this.generateEnvironmentVariables(currentEnvironment);
 
-    const aliases = (await toArrayAsync(this.aliases)).reduce((aliases, [name, alias]) => { aliases[name] = alias; return aliases; }, <Record<string, string>>{});
+    async function transformtoRecord<T, U = T> (
+      orig: AsyncGenerator<Promise<Tuple<string, T>>, any, unknown>, 
+      // this type cast to U isn't *technically* correct but since it's locally scoped for this next block of code it shouldn't cause problems
+      func: (value: T) => U = (x => x as unknown as U)) {  
+
+      return linq.values((await toArrayAsync(orig))).toObject(tuple => [tuple[0], func(tuple[1])]); 
+    }
+    
+    const defines = await transformtoRecord(this.defines);
+    const aliases = await transformtoRecord(this.aliases);
+    const locations = await transformtoRecord(this.locations);
+    const tools = await transformtoRecord(this.tools);
+    const properties = await transformtoRecord(this.properties, (set) => Array.from(set));
+    const paths = await transformtoRecord(this.paths, (set) => Array.from(set));
 
     // generate undo file if requested
     if (undoEnvironmentFile) {
@@ -669,6 +682,12 @@ export class Activation {
 
       this.#session.channels.verbose(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
       await shellScriptFile.writeUTF8(contents);
+    }
+
+    if(json) {
+      const contents = generateJson(variables, defines, aliases, properties, locations, paths, tools);
+      this.#session.channels.verbose(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
+      await json.writeUTF8(contents); 
     }
   }
 
@@ -739,6 +758,22 @@ function generateScriptContent(kind: string, variables: Record<string, string>, 
   return '';
 }
 
+function generateJson(variables: Record<string, string>, defines: Record<string, string>, aliases: Record<string, string>, 
+  properties:Record<string, string[]>, locations: Record<string, string>, paths: Record<string, string[]>, tools: Record<string, string>): string {
+    
+  var contents = {
+    "version": 1, 
+    variables,
+    defines, 
+    aliases, 
+    properties, 
+    locations, 
+    paths, 
+    tools
+  };
+  
+  return JSON.stringify(contents);
+}
 
 export async function deactivate(shellScriptFile: Uri, variables: Record<string, string>, aliases: Record<string, string>) {
   const kind = extname(shellScriptFile.fsPath);
