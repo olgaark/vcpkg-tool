@@ -46,9 +46,8 @@ export class ActivateCommand extends Command {
       allLanguages: this.commandLine.allLanguages,
       language: this.commandLine.language,
       msbuildProps: await this.msbuildProps.value,
+      artifactTag: await this.artifactTag.value,
       json: await this.json.value
-      msbuildProps: await this.msbuildProps.value,
-      artifactTag: await this.artifactTag.value
     });
   }
 }
