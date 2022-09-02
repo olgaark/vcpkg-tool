@@ -198,8 +198,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
             auto m_pgh = test_parse_project_manifest(projectManifest);
             REQUIRE(m_pgh.has_value());
             auto& pgh = **m_pgh.get();
-            CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
-                  Json::stringify(projectManifest, Json::JsonStyle::with_spaces(4)));
+            CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(projectManifest));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
             CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
             CHECK(pgh.core_paragraph->port_version == 0);
@@ -209,8 +208,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
             auto m_pgh = test_parse_port_manifest(portManifest);
             REQUIRE(m_pgh.has_value());
             auto& pgh = **m_pgh.get();
-            CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
-                  Json::stringify(portManifest, Json::JsonStyle::with_spaces(4)));
+            CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(portManifest));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
             CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
             CHECK(pgh.core_paragraph->port_version == 0);
@@ -490,6 +488,24 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
                 "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
+    }
+
+    SECTION ("valid CAPITAL baseline")
+    {
+        std::string raw = R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "builtin-baseline": "089FA4DE7DCA22C67DCAB631F618D5CD0697C8D4"
+}
+)json";
+        auto m_pgh = test_parse_port_manifest(raw);
+
+        REQUIRE(m_pgh.has_value());
+        auto& pgh = **m_pgh.get();
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
+                "089FA4DE7DCA22C67DCAB631F618D5CD0697C8D4");
     }
 
     SECTION ("empty baseline")
@@ -800,8 +816,7 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     auto config_obj = config.first.object(VCPKG_LINE_INFO);
     REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
     auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
-    REQUIRE(Json::stringify(parsed_config_obj, Json::JsonStyle::with_spaces(4)) ==
-            Json::stringify(config_obj, Json::JsonStyle::with_spaces(4)));
+    REQUIRE(Json::stringify(parsed_config_obj) == Json::stringify(config_obj));
 }
 
 TEST_CASE ("manifest construct maximum", "[manifests]")

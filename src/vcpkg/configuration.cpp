@@ -560,7 +560,7 @@ namespace vcpkg
         {
             if (paths.use_git_default_registry())
             {
-                return get_baseline_from_git_repo(paths, builtin_registry_git_url());
+                return get_baseline_from_git_repo(paths, builtin_registry_git_url);
             }
             else
             {
@@ -588,7 +588,7 @@ namespace vcpkg
     {
         if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
-            return builtin_registry_git_url();
+            return builtin_registry_git_url;
         }
         if (kind == RegistryConfigDeserializer::KIND_FILESYSTEM)
         {
@@ -630,11 +630,9 @@ namespace vcpkg
             auto unknown_fields = find_unknown_fields(*this);
             if (!unknown_fields.empty())
             {
-                vcpkg::print2(
-                    Color::warning,
-                    "Warning: configuration contains the following unrecognized fields:\n\n",
-                    Strings::join("\n", unknown_fields),
-                    "\n\nIf these are documented fields that should be recognized try updating the vcpkg tool.\n");
+                msg::println_warning(msg::format(msgUnrecognizedConfigField)
+                                         .append_raw("\n\n" + Strings::join("\n", unknown_fields))
+                                         .append(msgDocumentedFieldsSuggestUpdate));
             }
         }
     }

@@ -989,7 +989,6 @@ namespace vcpkg
         constexpr static StringLiteral DOCUMENTATION = "documentation";
         constexpr static StringLiteral LICENSE = "license";
         constexpr static StringLiteral DEPENDENCIES = "dependencies";
-        constexpr static StringLiteral DEV_DEPENDENCIES = "dev-dependencies";
         constexpr static StringLiteral FEATURES = "features";
         constexpr static StringLiteral DEFAULT_FEATURES = "default-features";
         constexpr static StringLiteral SUPPORTS = "supports";
@@ -1009,7 +1008,6 @@ namespace vcpkg
                 DOCUMENTATION,
                 LICENSE,
                 DEPENDENCIES,
-                DEV_DEPENDENCIES,
                 FEATURES,
                 DEFAULT_FEATURES,
                 SUPPORTS,
@@ -1055,10 +1053,6 @@ namespace vcpkg
                 "an array of overrides"};
             r.optional_object_field(obj, OVERRIDES, spgh.overrides, overrides_deserializer);
 
-            if (obj.contains(DEV_DEPENDENCIES))
-            {
-                r.add_generic_error(type_name(), DEV_DEPENDENCIES, " are not yet supported");
-            }
             std::string baseline;
             if (r.optional_object_field(obj, BUILTIN_BASELINE, baseline, BaselineCommitDeserializer::instance))
             {
@@ -1103,7 +1097,6 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::DOCUMENTATION;
     constexpr StringLiteral ManifestDeserializer::LICENSE;
     constexpr StringLiteral ManifestDeserializer::DEPENDENCIES;
-    constexpr StringLiteral ManifestDeserializer::DEV_DEPENDENCIES;
     constexpr StringLiteral ManifestDeserializer::FEATURES;
     constexpr StringLiteral ManifestDeserializer::DEFAULT_FEATURES;
     constexpr StringLiteral ManifestDeserializer::SUPPORTS;
@@ -1211,8 +1204,8 @@ namespace vcpkg
             {
                 Strings::append(ret, "    ", err, "\n");
             }
-            print2("See ", docs::registries_url, " for more information.\n");
-            print2("See ", docs::manifests_url, " for more information.\n");
+            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
             return std::move(ret);
         }
         else
@@ -1383,7 +1376,7 @@ namespace vcpkg
                     [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
             {
                 Strings::append(message,
-                                "This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
+                                msg::format(msgListOfValidFieldsForControlFiles).extract_data(),
                                 Strings::join("\n    ", get_list_of_valid_fields()),
                                 "\n\n");
 #if defined(_WIN32)
@@ -1391,8 +1384,7 @@ namespace vcpkg
 #else
                 auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
-                Strings::append(
-                    message, "You may need to update the vcpkg binary; try running ", bootstrap, " to update.\n\n");
+                Strings::append(message, msg::format(msgSuggestUpdateVcpkg, msg::command_line = bootstrap).data());
             }
         }
 
@@ -1430,7 +1422,7 @@ namespace vcpkg
             }
             if (start_of_chunk != end_of_chunk)
             {
-                print2(Color::error, StringView{start_of_chunk, end_of_chunk});
+                msg::write_unlocalized_text_to_stdout(Color::error, StringView{start_of_chunk, end_of_chunk});
                 start_of_chunk = end_of_chunk;
             }
 
@@ -1440,11 +1432,10 @@ namespace vcpkg
             }
             if (start_of_chunk != end_of_chunk)
             {
-                print2(StringView{start_of_chunk, end_of_chunk});
+                msg::write_unlocalized_text_to_stdout(Color::error, StringView{start_of_chunk, end_of_chunk});
                 start_of_chunk = end_of_chunk;
             }
         }
-        print2('\n');
     }
 
     Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const
@@ -1615,11 +1606,12 @@ namespace vcpkg
             auto maybe_configuration = reader.visit(*configuration, get_configuration_deserializer());
             if (!reader.errors().empty())
             {
-                print2(Color::error, "Errors occurred while parsing ", ManifestDeserializer::VCPKG_CONFIGURATION, "\n");
+                msg::println_error(msgErrorWhileParsing, msg::path = ManifestDeserializer::VCPKG_CONFIGURATION);
                 for (auto&& msg : reader.errors())
-                    print2("    ", msg, '\n');
-
-                print2("See ", docs::registries_url, " for more information.\n");
+                {
+                    msg::println_error(LocalizedString().append_indent().append_raw(msg));
+                }
+                msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,

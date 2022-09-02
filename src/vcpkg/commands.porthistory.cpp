@@ -112,7 +112,7 @@ namespace vcpkg::Commands::PortHistory
             if (auto output = maybe_output.get())
             {
                 auto commits = Util::fmap(
-                    Strings::split(*output, '\n'), [](const std::string& line) -> auto {
+                    Strings::split(*output, '\n'), [](const std::string& line) -> auto{
                         auto parts = Strings::split(line, ' ');
                         return std::make_pair(parts[0], parts[1]);
                     });
@@ -184,8 +184,7 @@ namespace vcpkg::Commands::PortHistory
             Json::Object root;
             root.insert("versions", versions_json);
 
-            auto json_string = Json::stringify(root, vcpkg::Json::JsonStyle::with_spaces(2));
-
+            auto json_string = Json::stringify(root);
             if (maybe_output_file.has_value())
             {
                 auto output_file_path = maybe_output_file.value_or_exit(VCPKG_LINE_INFO);
@@ -194,22 +193,33 @@ namespace vcpkg::Commands::PortHistory
             }
             else
             {
-                vcpkg::printf("%s\n", json_string);
+                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("{}\n", json_string));
             }
         }
         else
         {
             if (maybe_output_file.has_value())
             {
-                vcpkg::printf(Color::warning, "Warning: Option `--$s` requires `--x-json` switch.", OPTION_OUTPUT_FILE);
+                msg::println_warning(msgOptionRequiresOption, msg::value = OPTION_OUTPUT_FILE, msg::option = "x-json");
             }
+            auto message = LocalizedString::from_raw(fmt::format("{0:>20}", msg::format(msgVersionTableHeader)))
+                               .append_indent()
+                               .append_raw(fmt::format("{:>10}", msg::format(msgDateTableHeader)))
+                               .append_indent()
+                               .append_raw(fmt::format("{}\n", msg::format(msgVcpkgCommitTableHeader)));
 
-            print2("             version          date    vcpkg commit\n");
             for (auto&& version : versions)
             {
-                vcpkg::printf("%20.20s    %s    %s\n", version.version_string, version.commit_date, version.commit_id);
+                message.append_raw(fmt::format("{0:>20}", version.version_string))
+                    .append_indent()
+                    .append_raw(fmt::format("{}", version.commit_date))
+                    .append_indent()
+                    .append_raw(fmt::format("{}\n", version.commit_id));
             }
+
+            msg::println(message);
         }
+
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
